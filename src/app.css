@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Base mobile/PWA friendly styles for Elevate */
+:root {
+  --app-bg: #0a0a0a;
+  --card-bg: #111;
+  --text: #f1f1f1;
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.word-card {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.word-card:active {
+  transform: scale(0.985);
+}
