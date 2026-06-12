@@ -16,3 +16,12 @@ coverage/
 .venv/
 __pycache__/
 *.pyc
+
+# SvelteKit / Vite
+.svelte-kit/
+build/
+# dist/ already covered above
+
+# IDE / editor (optional - uncomment if desired)
+# .vscode/
+# .idea/
