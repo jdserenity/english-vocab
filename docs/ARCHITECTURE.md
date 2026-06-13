@@ -1,7 +1,7 @@
 # Architecture
 
 ## Product
-Elevate delivers exactly 5 new advanced English words per day to an advanced speaker's phone via a PWA.
+English Vocab delivers exactly 5 new advanced English words per day to an advanced speaker's phone via a PWA.
 
 Core value: high-quality curation of "Goldilocks" words — elevated and precise enough to notice and want, but practical and usable in real situations (not obscure, archaic, or purely academic curiosities). Words sit at the edge of an advanced speaker's active vocabulary.
 
@@ -24,15 +24,14 @@ Non-goals (v1): accounts, cloud sync, push notifications, subscriptions, ads, mu
 - No runtime backend for core experience
 
 ## Data Model
-- Words source of truth: static bundled module (src/lib/words.ts or .json). Each entry includes at minimum:
-  word, pos, definition, examples: string[], optional notes.
-- User state (persisted in browser storage):
+- Words source of truth: static bundled module (src/lib/words.ts). Curated list (currently ~26 words after user feedback on "too easy" vs "too obscure" vs "right on the line"). Each entry: word, pos, definition, examples[], optional notes.
+- User state (local-first in localStorage via src/lib/user-state.ts):
   - seen / delivered words (to avoid immediate repeats)
   - mastered words (permanently excluded)
   - favorites + freeform per-word notes
-  - delivery history (date → word list)
-  - streak / last seen date
-- Daily selection: client-side logic only. Date-based seeding or unseen-pool sampling to pick 5. Graceful fallback when pool shrinks.
+  - Optional sync to D1 (user_id keyed JSON blob) via /api/state for cross-device use. Local state is always the source of truth and the app is fully functional offline.
+- Daily selection: pure client-side `getDailySelection(isoDate, pool, seenSet)`. Deterministic per date via simple hash, excludes seen+mastered. Tested.
+- D1 (when bound): single `progress` table (user_id PK, data JSON, updated_at). Binding name "DB". Not required for core offline PWA experience.
 
 ## Hosting & Deployment
 - Static build output deployed to Cloudflare Pages.

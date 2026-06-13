@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "english-vocab",
+  "compatibility_date": "2026-06-12",
+  "pages_build_output_dir": ".svelte-kit/cloudflare",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "english-vocab-db",
+      "database_id": "5d07f3db-9df5-475c-ba0c-cddb326319eb",
+      "migrations_dir": "./migrations"
+    }
+  ]
+}

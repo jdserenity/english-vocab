@@ -22,6 +22,9 @@ __pycache__/
 build/
 # dist/ already covered above
 
+# Wrangler local state
+.wrangler/
+
 # IDE / editor (optional - uncomment if desired)
 # .vscode/
 # .idea/

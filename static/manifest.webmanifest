@@ -1,7 +1,7 @@
 {
-  "name": "Elevate",
-  "short_name": "Elevate",
-  "description": "5 elevated English words every day for advanced speakers.",
+  "name": "English Vocab",
+  "short_name": "English Vocab",
+  "description": "5 new English words a day for advanced speakers.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

@@ -1,6 +1,6 @@
-# Elevate
+# English Vocab
 
-5 practical elevated English words a day.
+5 new English words a day for advanced speakers.
 
 For advanced speakers. Words that are sophisticated enough to be interesting, but right in the usable range — the kind you'll actually encounter and deploy in conversation, writing, and professional contexts.
 
