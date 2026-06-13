@@ -55,10 +55,7 @@ function save(state: UserState) {
   }
 }
 
-let state = $state<UserState>(load());
-
-// reactive seen set for convenience with getDailySelection
-export const seenSet = $derived(new Set(state.seen));
+let state: UserState = load();
 
 export function getUserId() {
   return state.userId;
