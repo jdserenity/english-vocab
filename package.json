@@ -12,7 +12,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest",
 		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name english-vocab",
-		"wrangler-types": "wrangler types"
+		"wrangler-types": "wrangler types",
+		"curate": "node scripts/curate-known.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^7.2.8",

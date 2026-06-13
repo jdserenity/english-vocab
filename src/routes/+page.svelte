@@ -13,8 +13,7 @@
     exportState,
     importState,
     loadFromCloud,
-    syncToCloud,
-    getKnownWords
+    syncToCloud
   } from '$lib/user-state';
 
   const today = new Date().toISOString().slice(0, 10);
@@ -103,17 +102,6 @@
     alert(ok ? 'Pushed to D1.' : 'Push failed (D1 binding probably not attached yet).');
   }
 
-  function copyKnownForCuration() {
-    const known = getKnownWords();
-    if (known.length === 0) {
-      alert('No words marked "I know this already" yet.');
-      return;
-    }
-    const text = known.join(', ');
-    navigator.clipboard.writeText(text);
-    alert(`Copied ${known.length} words you've marked "I know this already". Paste this list to me in chat so I can use it to curate better future suggestions (avoiding ones that are too easy for you).`);
-  }
-
   // Best-effort: try to hydrate from D1 on first load in a real deployment
   if (typeof window !== 'undefined') {
     // don't block render
@@ -137,25 +125,20 @@
   </header>
 
   {#if showUserId}
-    <div class="max-w-md mx-auto mb-4 p-3 bg-[#111] rounded-2xl text-xs flex items-center justify-between gap-2">
-      <div class="font-mono text-white/70 truncate">{userId}</div>
-      <div class="flex gap-2 shrink-0">
-        <button onclick={copyUserId} class="px-2 py-1 border border-white/20 rounded">copy id</button>
-        <button onclick={doPull} class="px-2 py-1 border border-emerald-400/40 text-emerald-400 rounded">pull D1</button>
-        <button onclick={doPush} class="px-2 py-1 border border-emerald-400/40 text-emerald-400 rounded">push D1</button>
-        <button onclick={doExport} class="px-2 py-1 border border-white/20 rounded">export</button>
-        <button onclick={doImport} class="px-2 py-1 border border-white/20 rounded">import</button>
-        <button onclick={doReset} class="px-2 py-1 border border-red-400/40 text-red-400 rounded">reset</button>
-      </div>
-    </div>
-
     <div class="max-w-md mx-auto mb-4 p-3 bg-[#111] rounded-2xl text-xs">
-      <div class="flex items-center justify-between mb-1">
-        <span>You've marked <strong>{getKnownWords().length}</strong> words "I know this already"</span>
-        <button onclick={copyKnownForCuration} class="px-2 py-1 border border-emerald-400/40 text-emerald-400 rounded text-[10px]">Copy list for Grok</button>
+      <div class="mb-2">
+        <span class="font-mono text-white/70">{userId}</span>
+        <button onclick={copyUserId} class="ml-2 px-2 py-0.5 text-[10px] border border-white/20 rounded">copy user id</button>
       </div>
-      <div class="text-[10px] text-white/50">
-        One-click copy of exactly the words you've hit with "I know this already". Paste the list here in chat so I can see what's too easy for you and curate better suggestions automatically. No full state export needed.
+      <div class="text-[10px] text-white/60">
+        Copy your user ID (tap the button) and paste it to me when we're adding new words. I will run a direct query against the D1 database to see every word you've ever marked "I know this already". You never have to copy or send any lists.
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button onclick={doPull} class="px-2 py-1 text-[10px] border border-emerald-400/40 text-emerald-400 rounded">pull from D1</button>
+        <button onclick={doPush} class="px-2 py-1 text-[10px] border border-emerald-400/40 text-emerald-400 rounded">push to D1</button>
+        <button onclick={doExport} class="px-2 py-1 text-[10px] border border-white/20 rounded">export full state (backup)</button>
+        <button onclick={doImport} class="px-2 py-1 text-[10px] border border-white/20 rounded">import</button>
+        <button onclick={doReset} class="px-2 py-1 text-[10px] border border-red-400/40 text-red-400 rounded">reset</button>
       </div>
     </div>
   {/if}
@@ -163,7 +146,7 @@
   <div class="max-w-md mx-auto">
     <div class="mb-3 flex items-baseline justify-between px-1">
       <div class="text-lg font-medium">Today's 5</div>
-      <div class="text-[10px] text-white/50">tap word • ★ fav • "I know this already" / master</div>
+      <div class="text-[10px] text-white/50">tap to speak • ★ favorite • "I know this already" (removes from your rotation + feeds the DB)</div>
     </div>
 
     <div class="space-y-3">

@@ -3,7 +3,7 @@
 ## Product
 English Vocab delivers exactly 5 new advanced English words per day to an advanced speaker's phone via a PWA.
 
-Core value: high-quality curation of "Goldilocks" words — elevated and precise enough to notice and want, but practical and usable in real situations (not obscure, archaic, or purely academic curiosities). Words sit at the edge of an advanced speaker's active vocabulary.
+Core value: high-quality curation of "Goldilocks" words — sophisticated but usable, precise enough to be interesting without feeling obscure or pretentious. Words sit right at the edge of what an advanced speaker already commands and can actually deploy.
 
 Key user flows:
 - Receive a fresh daily set of 5.

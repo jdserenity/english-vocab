@@ -66,6 +66,10 @@ export function markKnown(word: string) {
     state.seen = [...state.seen, word];
   }
   save(state);
+
+  // Best-effort push to D1 so that when curating new words I can query the DB directly.
+  // No manual export/copy needed from you.
+  syncToCloud().catch(() => {});
 }
 
 export function master(word: string) {
@@ -194,8 +198,4 @@ export async function syncToCloud(): Promise<boolean> {
   }
 }
 
-// For easy curation feedback (no full state export needed).
-// Returns the sorted list of words the user has marked via "I know this already" (seen + mastered).
-export function getKnownWords(): string[] {
-  return Array.from(new Set([...state.seen, ...state.mastered])).sort();
-}
+// (Removed getKnownWords - curation now happens by directly querying D1 with the userId when needed.)
