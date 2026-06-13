@@ -22,16 +22,25 @@ function load(): UserState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as UserState;
-      if (!parsed.userId) parsed.userId = crypto.randomUUID();
+      if (!parsed.userId) parsed.userId = getId();
       return parsed;
     }
   } catch {}
   return createDefault();
 }
 
+function getId() {
+  // Robust for both browser (client) and Cloudflare workerd (SSR / Functions)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback (shouldn't happen in supported envs)
+  return 'user-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+}
+
 function createDefault(): UserState {
   return {
-    userId: crypto.randomUUID(),
+    userId: getId(),
     seen: [],
     mastered: [],
     favorites: [],

@@ -34,20 +34,21 @@ export const GET: RequestHandler = async ({ url, platform }) => {
     return json({ ok: true, from: 'no-d1', data: null });
   }
 
-  const row = await d1
-    .prepare('SELECT data FROM progress WHERE user_id = ?')
-    .bind(userId)
-    .first<{ data: string }>();
-
-  if (!row) {
-    return json({ ok: true, from: 'd1', data: null });
-  }
-
   try {
+    const row = await d1
+      .prepare('SELECT data FROM progress WHERE user_id = ?')
+      .bind(userId)
+      .first<{ data: string }>();
+
+    if (!row) {
+      return json({ ok: true, from: 'd1', data: null });
+    }
+
     const data = JSON.parse(row.data);
     return json({ ok: true, from: 'd1', data });
-  } catch {
-    return json({ ok: true, from: 'd1', data: null });
+  } catch (e) {
+    console.error('D1 GET error', e);
+    return json({ ok: true, from: 'd1-error', data: null });
   }
 };
 
@@ -68,13 +69,18 @@ export const POST: RequestHandler = async ({ request, platform }) => {
   const jsonData = JSON.stringify(data);
   const now = Date.now();
 
-  await d1
-    .prepare(
-      'INSERT INTO progress (user_id, data, updated_at) VALUES (?, ?, ?)\n' +
-      'ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at'
-    )
-    .bind(userId, jsonData, now)
-    .run();
+  try {
+    await d1
+      .prepare(
+        'INSERT INTO progress (user_id, data, updated_at) VALUES (?, ?, ?)\n' +
+        'ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at'
+      )
+      .bind(userId, jsonData, now)
+      .run();
 
-  return json({ ok: true, from: 'd1' });
+    return json({ ok: true, from: 'd1' });
+  } catch (e) {
+    console.error('D1 POST error', e);
+    return json({ ok: true, from: 'd1-error', message: 'DB write failed' });
+  }
 };
