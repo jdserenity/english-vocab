@@ -35,19 +35,21 @@ npm run deploy
 # npx wrangler pages deploy .svelte-kit/cloudflare --project-name english-vocab
 ```
 
-The first deploy will create (or update) the Pages project "english-vocab".
+The first (manual or Git) deploy will create (or update) the Pages project "english-vocab". For Git integration to work on every push to main, the project in the dashboard must be linked to your Git repo, with the build settings below configured.
 
 ## Wire the D1 binding (required for /api/state to work)
 
-After the first successful `npm run deploy`:
+**This is required even for Git-based deploys.** The wrangler.jsonc helps with local/wrangler CLI, but the live Pages project needs the binding configured in the dashboard.
 
-1. Go to Cloudflare dashboard → Pages → your "english-vocab" project.
+1. Go to Cloudflare dashboard → Pages → your "english-vocab" project (the one serving the URL you're testing).
 2. Settings → Functions (or Bindings).
 3. Add a D1 database binding:
    - Variable name / Binding: `DB`
    - D1 database: select `english-vocab-db`
 
-Redeploy (or trigger a new one) after adding the binding.
+4. Save, then trigger a new deployment (push to main or manual "Deploy" in dashboard).
+
+Bindings take effect on new deployments. The "no-d1" fallback in the code should prevent crashes, but a missing binding during early loads or specific paths can contribute to 500s or broken state sync.
 
 ## Local development notes
 
@@ -59,6 +61,8 @@ Redeploy (or trigger a new one) after adding the binding.
   npx wrangler pages dev .svelte-kit/cloudflare --d1 english-vocab-db
   ```
   (this serves the built worker + static assets with simulated or remote D1).
+
+**Note on Git auto-deploys:** The dashboard build settings (below) control Git pushes. wrangler.jsonc is mainly for `wrangler` CLI deploys and local dev. Always verify the build output dir and D1 binding in the dashboard for the project connected to your repo.
 
 ## Useful wrangler commands
 
