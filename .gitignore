@@ -22,8 +22,9 @@ __pycache__/
 build/
 # dist/ already covered above
 
-# Wrangler local state
+# Wrangler / Cloudflare local dev state (never commit)
 .wrangler/
+**/.wrangler/
 
 # IDE / editor (optional - uncomment if desired)
 # .vscode/
