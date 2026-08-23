@@ -1,43 +1,38 @@
 # Code map
 
-Map of this project's codebase for the maintainer: which files do what, how data and control flow between them, where state lives. Prefer diagrams (mermaid or ASCII). Write in the first person (I, me, my).
-
-## What belongs here
-
-- File / module map: important paths and one-line roles
-- Data and control flow between those pieces
-- Where state lives (DB, files, env, memory, external services)
-- Diagrams of the above when they clarify the map
-
-## What does not belong here
-
-- Install, run, or usage instructions — those live in root `README.md` (keep that README lean)
-- Product pitch or "what this app is for" — durable product/system facts go in `scaffold/CODEMAP-LLM.md`
-- Generic tutorials, glossaries, or coaching
-
-## Example shape (replace with this project's real map)
-
-### Layout
+## Layout
 
 ```
-src/
-  main.ts           # entry; wires the router
-  routes/orders.ts  # HTTP handlers for orders
-  db/client.ts      # DB connection used by routes
-lib/
-  auth.ts           # session checks called from routes
+src/lib/words.ts              # entry list + one-a-day picker
+src/lib/user-state.ts         # local progress, sentences, optional D1 sync
+src/lib/format.ts             # readable dates and kind labels
+src/routes/+layout.ts         # ssr off; this app is local-first
+src/routes/+layout.svelte     # paper page + English / Today / Archive
+src/routes/+page.svelte       # today's entry + write-a-sentence + skip
+scaffold/skills/add-entries/  # how to generate the next batch of entries
+src/routes/archive/+page.svelte
+src/routes/api/state/+server.ts   # D1 read/write
+src/app.css                   # literary theme
+migrations/001_init.sql       # progress table
+static/manifest.webmanifest
 ```
 
-### Flow
+## Flow
 
 ```mermaid
 flowchart LR
-  Client --> routes/orders.ts
-  routes/orders.ts --> lib/auth.ts
-  routes/orders.ts --> db/client.ts
+  Today["Today page"] --> State["user-state.ts"]
+  Archive["Archive page"] --> State
+  State --> Pick["words.ts picker"]
+  State --> LS["localStorage"]
+  State --> API["/api/state"]
+  API --> D1["Cloudflare D1"]
 ```
 
-### State
+Today asks `getTodaysEntry`. If I already wrote a sentence for this date, I see that entry. If I skip, the term is stored as skipped (and any sentence for it is dropped) and today redraws. If I write a sentence, it is stored with today's date and shows up in the archive.
 
-- Order rows: Postgres `orders` table (via `db/client.ts`)
-- Session: cookie → checked in `lib/auth.ts`
+## State
+
+- Entry list: `src/lib/words.ts` (`entries`)
+- My progress: browser localStorage key `english-vocab:user-state:v1`
+- Optional copy of that progress: D1 `progress` row keyed by `userId`

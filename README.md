@@ -1,13 +1,11 @@
 # English Vocab
 
-5 new English words a day for advanced speakers.
+One usable English entry a day: a word, idiom, saying, or writing move. Built to replace weak habits, not to collect rare words.
 
-For advanced speakers. Words that are sophisticated enough to be interesting, but right in the usable range — the kind you'll actually encounter and deploy in conversation, writing, and professional contexts.
-
-- Client-side PWA (installable on phone, fully offline capable after load)
-- Local-only progress (seen words, mastery, notes/favorites)
-- Zero cost. No ads, accounts, or subscriptions.
-- Self-hosted on Cloudflare Pages
+- Client-side PWA (installable on a phone, works offline after the first load)
+- Local-only progress (skipped entries, your sentences)
+- Optional sync to Cloudflare D1 once the project binding is attached
+- No ads, accounts, or subscriptions
 
 ## Dev
 
@@ -23,6 +21,8 @@ npm run build
 npm run preview
 ```
 
-Deploy the `build` dir (or `.svelte-kit/cloudflare`) to Cloudflare Pages via git integration or Wrangler.
+```bash
+npm test
+```
 
-See docs/ARCHITECTURE.md and docs/DEPLOY.md.
+Deploy the `build` dir (or `.svelte-kit/cloudflare`) to Cloudflare Pages.
