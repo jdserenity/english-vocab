@@ -11,6 +11,8 @@ type Progress = {
   favorites: string[];
   notes: Record<string, string>;
   lastDate?: string;
+  skipped?: string[];
+  sentences?: Record<string, { text: string; date: string }>;
 };
 
 function isValidProgress(p: unknown): p is Progress {

@@ -1,9 +1,9 @@
 {
   "name": "English Vocab",
-  "short_name": "English Vocab",
-  "description": "5 new English words a day for advanced speakers.",
+  "short_name": "English",
+  "description": "One usable English entry a day — a word, idiom, saying, or writing move.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a"
+  "background_color": "#f3eee4",
+  "theme_color": "#f3eee4"
 }

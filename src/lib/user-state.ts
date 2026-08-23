@@ -1,40 +1,43 @@
-import { getDailySelection, words, type Word } from './words';
-
-// Simple personal state persisted to localStorage.
-// Later this will optionally sync to D1 via /api/state for cross-device use.
+import { getDailySelection, getEntry, entries, type Entry } from './words';
 
 const STORAGE_KEY = 'english-vocab:user-state:v1';
 
+export type SentenceRecord = {
+  text: string;
+  date: string;
+};
+
+export type ArchiveItem = {
+  term: string;
+  sentence: string;
+  date: string;
+  entry: Entry | undefined;
+};
+
 export type UserState = {
   userId: string;
-  seen: string[];           // words the user has marked known / seen
-  mastered: string[];       // permanently removed from rotation
+  seen: string[];
+  mastered: string[];
   favorites: string[];
-  notes: Record<string, string>; // word -> user's personal note
-  lastDate: string;         // YYYY-MM-DD of last interaction
+  notes: Record<string, string>;
+  lastDate: string;
+  skipped: string[];
+  sentences: Record<string, SentenceRecord>;
 };
 
 function load(): UserState {
-  if (typeof localStorage === 'undefined') {
-    return createDefault();
-  }
+  if (typeof localStorage === 'undefined') return createDefault();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as UserState;
-      if (!parsed.userId) parsed.userId = getId();
-      return parsed;
-    }
+    if (raw) return normalize(JSON.parse(raw));
   } catch {}
   return createDefault();
 }
 
 function getId() {
-  // Robust for both browser (client) and Cloudflare workerd (SSR / Functions)
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  // Fallback (shouldn't happen in supported envs)
   return 'user-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
 }
 
@@ -45,13 +48,46 @@ function createDefault(): UserState {
     mastered: [],
     favorites: [],
     notes: {},
-    lastDate: new Date().toISOString().slice(0, 10)
+    lastDate: new Date().toISOString().slice(0, 10),
+    skipped: [],
+    sentences: {}
   };
 }
 
-function save(state: UserState) {
+function normalize(parsed: Partial<UserState> & { userId?: string }): UserState {
+  const base = createDefault();
+  const skipped = Array.isArray(parsed.skipped)
+    ? parsed.skipped
+    : Array.isArray(parsed.seen) ? parsed.seen : [];
+  const sentences = parsed.sentences && typeof parsed.sentences === 'object' ? parsed.sentences : {};
+  return {
+    userId: parsed.userId || base.userId,
+    seen: Array.isArray(parsed.seen) ? parsed.seen : [],
+    mastered: Array.isArray(parsed.mastered) ? parsed.mastered : [],
+    favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
+    notes: parsed.notes && typeof parsed.notes === 'object' ? parsed.notes : {},
+    lastDate: parsed.lastDate || base.lastDate,
+    skipped,
+    sentences
+  };
+}
+
+function usedTerms(s: UserState = state): string[] {
+  return Object.keys(s.sentences);
+}
+
+function excludedSet(s: UserState = state): Set<string> {
+  return new Set([...s.skipped, ...usedTerms(s)]);
+}
+
+function syncSeen(s: UserState) {
+  s.seen = Array.from(excludedSet(s));
+}
+
+function save(s: UserState) {
+  syncSeen(s);
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   }
 }
 
@@ -61,76 +97,66 @@ export function getUserId() {
   return state.userId;
 }
 
-export function getTodaysWords(date = new Date().toISOString().slice(0, 10)): Word[] {
-  // Exclude both seen and mastered
-  const excluded = new Set([...state.seen, ...state.mastered]);
-  return getDailySelection(date, words, excluded);
+export function getTodaysEntry(date = new Date().toISOString().slice(0, 10)): Entry | null {
+  const locked = Object.entries(state.sentences).find(([, rec]) => rec.date === date);
+  if (locked) return getEntry(locked[0]) ?? null;
+  const pick = getDailySelection(date, entries, excludedSet());
+  return pick[0] ?? null;
 }
 
-export function markKnown(word: string) {
-  if (!state.seen.includes(word)) {
-    state.seen = [...state.seen, word];
+export function skipEntry(term: string) {
+  if (!state.skipped.includes(term)) state.skipped = [...state.skipped, term];
+  if (state.sentences[term]) {
+    const next = { ...state.sentences };
+    delete next[term];
+    state.sentences = next;
   }
   save(state);
-
-  // Best-effort push to D1 so that when curating new words I can query the DB directly.
-  // No manual export/copy needed from you.
   syncToCloud().catch(() => {});
 }
 
-export function master(word: string) {
-  if (!state.mastered.includes(word)) {
-    state.mastered = [...state.mastered, word];
-  }
-  // also remove from seen if present
-  state.seen = state.seen.filter(w => w !== word);
+export function saveSentence(term: string, text: string, date = new Date().toISOString().slice(0, 10)) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  state.sentences = { ...state.sentences, [term]: { text: trimmed, date } };
+  state.lastDate = date;
   save(state);
+  syncToCloud().catch(() => {});
 }
 
-export function toggleFavorite(word: string) {
-  if (state.favorites.includes(word)) {
-    state.favorites = state.favorites.filter(w => w !== word);
-  } else {
-    state.favorites = [...state.favorites, word];
-  }
-  save(state);
+export function getSentence(term: string): string {
+  return state.sentences[term]?.text || '';
 }
 
-export function setNote(word: string, note: string) {
-  if (note.trim()) {
-    state.notes[word] = note.trim();
-  } else {
-    delete state.notes[word];
-  }
-  state.notes = { ...state.notes };
-  save(state);
+export function getArchive(): ArchiveItem[] {
+  return Object.entries(state.sentences)
+    .map(([term, rec]) => ({ term, sentence: rec.text, date: rec.date, entry: getEntry(term) }))
+    .sort((a, b) => b.date.localeCompare(a.date) || a.term.localeCompare(b.term));
 }
 
-export function getNote(word: string): string {
-  return state.notes[word] || '';
-}
-
-export function isFavorite(word: string): boolean {
-  return state.favorites.includes(word);
+export function filterArchive(items: ArchiveItem[], query: string): ArchiveItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter(item => item.term.toLowerCase().includes(q) || item.sentence.toLowerCase().includes(q));
 }
 
 export function resetProgress() {
   const fresh = createDefault();
-  // keep the same userId so cloud sync (future) doesn't orphan data
   fresh.userId = state.userId;
   state = fresh;
   save(state);
 }
 
 export function exportState(): string {
+  syncSeen(state);
   return JSON.stringify(state, null, 2);
 }
 
 export function importState(json: string) {
   try {
-    const incoming = JSON.parse(json) as UserState;
-    if (incoming.userId && Array.isArray(incoming.seen)) {
-      state = incoming;
+    const incoming = JSON.parse(json);
+    if (incoming.userId && (Array.isArray(incoming.seen) || Array.isArray(incoming.skipped))) {
+      state = normalize(incoming);
       save(state);
       return true;
     }
@@ -138,39 +164,38 @@ export function importState(json: string) {
   return false;
 }
 
-// --- Cloud (D1) sync ---
-// The API lives at /api/state and expects { userId, data }.
-// It only works after:
-//   1. wrangler d1 create english-vocab-db
-//   2. fill database_id in wrangler.jsonc
-//   3. npm run build && npm run deploy
-//   4. In Cloudflare dashboard: Pages project "english-vocab" > Settings > Bindings > D1 databases > add binding "DB" pointing to english-vocab-db
-// Local Vite dev (npm run dev) will gracefully no-op.
-
 type ProgressPayload = {
   seen: string[];
   mastered: string[];
   favorites: string[];
   notes: Record<string, string>;
   lastDate?: string;
+  skipped?: string[];
+  sentences?: Record<string, SentenceRecord>;
 };
 
 function toPayload(): ProgressPayload {
+  syncSeen(state);
   return {
     seen: state.seen,
     mastered: state.mastered,
     favorites: state.favorites,
     notes: state.notes,
-    lastDate: state.lastDate
+    lastDate: state.lastDate,
+    skipped: state.skipped,
+    sentences: state.sentences
   };
 }
 
 function fromPayload(p: ProgressPayload) {
-  state.seen = Array.from(new Set([...(state.seen || []), ...(p.seen || [])]));
-  state.mastered = Array.from(new Set([...(state.mastered || []), ...(p.mastered || [])]));
-  state.favorites = Array.from(new Set([...(state.favorites || []), ...(p.favorites || [])]));
-  state.notes = { ...state.notes, ...(p.notes || {}) };
-  if (p.lastDate) state.lastDate = p.lastDate;
+  const next = normalize({ ...state, ...p, userId: state.userId });
+  next.skipped = Array.from(new Set([...(state.skipped || []), ...(next.skipped || [])]));
+  next.sentences = { ...state.sentences, ...(p.sentences || {}) };
+  next.favorites = Array.from(new Set([...(state.favorites || []), ...(p.favorites || [])]));
+  next.mastered = Array.from(new Set([...(state.mastered || []), ...(p.mastered || [])]));
+  next.notes = { ...state.notes, ...(p.notes || {}) };
+  if (p.lastDate) next.lastDate = p.lastDate;
+  state = next;
   save(state);
 }
 
@@ -203,5 +228,3 @@ export async function syncToCloud(): Promise<boolean> {
     return false;
   }
 }
-
-// (Removed getKnownWords - curation now happens by directly querying D1 with the userId when needed.)
